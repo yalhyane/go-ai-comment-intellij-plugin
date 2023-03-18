@@ -12,60 +12,90 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.yalhyane.intellij.goaidoccomment.settings.AppSettingsState;
 import org.jetbrains.annotations.NotNull;
 
-public class AddCommentAction extends AnAction  {
+import java.util.ArrayList;
 
+public class AddAiCommentAction extends AnAction  {
+
+    private AppSettingsState settings;
     private OkHttpChatGptApi chatGptAPI;
 
-    public AddCommentAction() {
+    public AddAiCommentAction() {
         super();
-        this.chatGptAPI = new OkHttpChatGptApi("API_KEY");
+        this.settings = AppSettingsState.getInstance();
     }
 
     @Override
-    public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-        Project project = anActionEvent.getRequiredData(CommonDataKeys.PROJECT);
-        Editor editor = anActionEvent.getData(CommonDataKeys.EDITOR);
+    public void actionPerformed(@NotNull AnActionEvent event) {
+        System.out.println("Token: " + this.settings.chatgptToken);
+
+        Project project = event.getRequiredData(CommonDataKeys.PROJECT);
+        Editor editor = event.getData(CommonDataKeys.EDITOR);
         CaretModel caret = editor.getCaretModel();
         Document doc = editor.getDocument();
-        PsiFile psiFile = anActionEvent.getData(CommonDataKeys.PSI_FILE);
+        PsiFile psiFile = event.getData(CommonDataKeys.PSI_FILE);
         if (editor == null || psiFile == null) {
             return;
         }
-        System.out.println("Caret at offset: " + caret.getOffset());
 
-        PsiElement element1 = psiFile.findElementAt(caret.getOffset());
-        if (element1 == null) {
-            System.out.println("Could not detect caret");
-            return;
+        PsiElement element;
+        String blockCode;
+        String blockName;
+        String blockType;
+
+        // handle selection
+        if (editor.getSelectionModel().hasSelection()) {
+            blockType = "code";
+            blockCode = editor.getSelectionModel().getSelectedText();
+            element = psiFile.findElementAt(editor.getSelectionModel().getSelectionStart());
+            blockName = "";
+        } else {
+            // handle function or method
+            PsiElement element1 = psiFile.findElementAt(caret.getOffset());
+            if (element1 == null) {
+                System.out.println("Could not detect caret");
+                return;
+            }
+
+            GoFunctionOrMethodDeclaration pe = PsiTreeUtil.getParentOfType(element1, GoFunctionOrMethodDeclaration.class);
+            if (pe == null) {
+                System.out.println("Not in function declaration");
+                return;
+            }
+
+            blockName = pe.getName();
+            blockCode = pe.getText();
+            blockType = "function";
+            element = pe;
+            // find first comment before whitespace
+
         }
 
-        GoFunctionOrMethodDeclaration pe = PsiTreeUtil.getParentOfType(element1, GoFunctionOrMethodDeclaration.class);
-        if (pe == null) {
-            System.out.println("Not in function declaration");
+
+        if (element == null) {
+            System.out.println("No code block detected");
             return;
         }
-
-        String funcName = pe.getName();
-        String funcBody = pe.getText();
-        System.out.println("GO Function Name: " + funcName);
-        // System.out.println("GO Function Text: " + funcBody);
-
-        // find first comment before whitespace
-        PsiElement prevElement = pe.getPrevSibling();
+        ArrayList<PsiElement> dropElements =new ArrayList<PsiElement>();
+        PsiElement prevElement = element.getPrevSibling();
+        Boolean skipFirst = false;
         while (prevElement instanceof PsiWhiteSpace) {
-            System.out.println("Function prev: " + prevElement.getClass());
+            if (!skipFirst) {
+              //  dropElements.add(prevElement);
+            }
+            //skipFirst = true;
             prevElement = prevElement.getPrevSibling();
         }
 
+
+
         PsiComment psiComment;
         if (prevElement instanceof PsiComment) {
-            // System.out.println("Function has docs: " + prevElement.getText());
             psiComment = (PsiComment) prevElement;
         } else {
             psiComment = null;
-            // System.out.println("Function prev: " + prevElement.getClass());
         }
 
 //        psiFile.accept(new GoRecursiveVisitor(){
@@ -88,24 +118,29 @@ public class AddCommentAction extends AnAction  {
         // String selectedText = editor.getSelectionModel().getSelectedText();
 
         WriteCommandAction.runWriteCommandAction(project, () -> {
-            String comment = this.getComment(funcName, funcBody);
+            // delete whitespaces
+            for (PsiElement el : dropElements) {
+                el.delete();
+            }
+            String comment = this.getComment(blockName, blockCode, blockType);
             System.out.println("Comment to add: " + comment);
             PsiParserFacade factory = PsiParserFacade.SERVICE.getInstance(project);
             PsiComment newPsiComment = factory.createLineCommentFromText(GoLanguage.INSTANCE, comment);
             if (psiComment != null) {
                 psiComment.replace(newPsiComment);
             } else {
-                System.out.println("pe.getParent(): " + pe.getParent().getClass());
-                pe.getParent().addBefore(newPsiComment, pe);
+                System.out.println("pe.getParent(): " + element.getParent().getClass());
+                element.getParent().addBefore(newPsiComment, element);
             }
         });
 
     }
 
-    private String getComment(String funcName, String funcBody) {
-        String prompt = getPrompt(funcBody);
+    private String getComment(String funcName, String funcBody, String blockType) {
+        chatGptAPI = new OkHttpChatGptApi(settings.chatgptToken);
+        String prompt = getPrompt(funcBody, blockType);
         try {
-            String comment = this.chatGptAPI.completion(prompt);
+            String comment = chatGptAPI.completion(prompt);
 
             comment = comment.trim();
             if (comment.startsWith("\"")) {
@@ -121,13 +156,13 @@ public class AddCommentAction extends AnAction  {
         }
     }
 
-    private String getPrompt(String funcBody) {
+    private String getPrompt(String blockCode, String blockType) {
         return "Write an insightful but concise comment in a complete sentence"
                 .concat("in present tense for the following")
-                .concat("Golang function without prefacing it with anything,")
+                .concat("Golang " + blockType + " without prefacing it with anything,")
                 .concat("the response must be in the language english")
                 .concat(":\n")
-                .concat(funcBody);
+                .concat(blockCode);
     }
 
     @Override
@@ -142,6 +177,6 @@ public class AddCommentAction extends AnAction  {
         // Set the availability based on whether a project is open
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         PsiFile psiFile = e.getData(CommonDataKeys.PSI_FILE);
-        e.getPresentation().setEnabled(editor != null && psiFile != null);
+        e.getPresentation().setEnabled(editor != null && psiFile != null && this.settings.chatgptToken != null);
     }
 }

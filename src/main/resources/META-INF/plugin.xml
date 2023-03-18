@@ -28,13 +28,18 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-
+        <applicationService serviceImplementation="com.yalhyane.intellij.goaidoccomment.settings.AppSettingsState"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.yalhyane.intellij.goaidoccomment.settings.AppSettingsConfigurable"
+                id="com.yalhyane.intellij.goaidoccomment.settings.AppSettingsConfigurable"
+                displayName="AI comment"/>
     </extensions>
 
 
     <actions>
         <!-- Add your actions here -->
-        <action id="Go.GenerateDocComment" class="com.yalhyane.intellij.goaidoccomment.AddCommentAction"
+        <action id="Go.GenerateDocComment" class="com.yalhyane.intellij.goaidoccomment.AddAiCommentAction"
                 text="Generate Ai Doc Comment"
                 description="Generate Doc comment using AI">
             <add-to-group group-id="GenerateGroup" anchor="first"/>
