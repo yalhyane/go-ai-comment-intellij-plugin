@@ -1,1 +1,1 @@
-rootProject.name = "go-ai-doc-comment"
+rootProject.name = "go-AI-comment"

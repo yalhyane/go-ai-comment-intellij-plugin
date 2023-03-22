@@ -5,7 +5,7 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>Go-ai-doc-comment</name>
+    <name>Go-AI-comment</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="y.alhyane@gmail.com" url="https://github.com/yalhyane">YAlhyane</vendor>
@@ -15,7 +15,28 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description>
         <![CDATA[
-            Generate Doc comment for your functions using ChatGPT
+            <p>Generate Doc comment for functions or selected code blocks using ChatGPT.</p>
+            <h2>Configuration</h2>
+            <ol>
+            <li>
+            Once the plugin is installed, restart the IDE.
+            </li>
+            <li>
+                Retrieve your ChatGPT API key from <a href="https://platform.openai.com/account/api-keys">OpenAI</a>
+                <br/>
+                <strong><i>&nbsp;&nbsp;Note: If you haven't already, you'll have to create an account.</i></strong>
+            </li>
+            <li>
+                Set the API Key in <strong>Settings &gt; Tools &gt; AI Comment</strong>
+            </li>
+            </ol>
+            <h2>To use the plugin:</h2>
+<ol>
+  <li>Put the cursor inside a function for which you want to generate a comment or Select a block of code.</li>
+  <li>Go to <strong>Code &gt; Generate</strong>.</li>
+  <li>Select the menu item <strong>Generate AI Comment</strong>.</li>
+  <li>A comment will be generated and inserted into the code.</li>
+</ol>
         ]]>
     </description>
 
@@ -40,11 +61,12 @@
     <actions>
         <!-- Add your actions here -->
         <action id="Go.GenerateDocComment" class="com.yalhyane.intellij.goaidoccomment.AddAiCommentAction"
-                text="Generate Ai Doc Comment"
-                description="Generate Doc comment using AI">
+                text="Generate AI Comment"
+                description="Generate comment using AI">
             <add-to-group group-id="GenerateGroup" anchor="first"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="control alt C"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl meta SLASH"/>
         </action>
     </actions>
+
 
 </idea-plugin>
