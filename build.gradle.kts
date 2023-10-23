@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.yalhyane.intellij.goAiDocComment"
-version = "1.0.1"
+version = "1.0.2"
 
 repositories {
     mavenCentral()
@@ -18,7 +18,7 @@ dependencies {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2022.1.4")
+    version.set("2023.2.3")
     type.set("GO")
 
     plugins.set(listOf("org.jetbrains.plugins.go"))
@@ -34,8 +34,8 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("221")
-        untilBuild.set("231.*")
+        sinceBuild.set("232")
+        untilBuild.set("241.*")
     }
 
     signPlugin {
