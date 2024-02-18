@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.yalhyane.intellij.goAiDocComment"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     mavenCentral()
@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation("org.json:json:20220924")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.theokanning.openai-gpt3-java:service:0.18.2")
 }
 
 // Configure Gradle IntelliJ Plugin
